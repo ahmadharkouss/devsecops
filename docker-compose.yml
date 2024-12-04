@@ -1,0 +1,81 @@
+version: '3.8'
+
+networks:
+  gitlab:
+    driver: bridge
+
+services:
+  gitlab:
+    image: gitlab/gitlab-ce:latest
+    container_name: gitlab
+    hostname: local.gitlab
+    restart: always
+    platform: linux/amd64 # This is required for running on M1 Mac
+    environment:
+#external_url 'http://local.gitlab'
+      GITLAB_OMNIBUS_CONFIG: |
+        gitlab_rails['gitlab_shell_ssh_port'] = 8022
+    ports:
+      - "8022:22"
+    volumes:
+      - gitlab_config:/etc/gitlab
+      - gitlab_logs:/var/log/gitlab
+      - gitlab_data:/var/opt/gitlab
+    networks:
+      - gitlab  
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - gitlab
+
+  runner1:
+    image: gitlab/gitlab-runner:latest
+    container_name: gitlab-runner-1
+    restart: always
+    environment:
+      - DOCKER_TLS_CERTDIR=/certs
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - gitlab_runner1_config:/etc/gitlab-runner
+    networks:
+      - gitlab   
+
+  runner2:
+    image: gitlab/gitlab-runner:latest
+    container_name: gitlab-runner-2
+    restart: always
+    environment:
+      - DOCKER_TLS_CERTDIR=/certs
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - gitlab_runner2_config:/etc/gitlab-runner
+    networks:
+      - gitlab   
+
+  runner3:
+    image: gitlab/gitlab-runner:latest
+    container_name: gitlab-runner-3
+    restart: always
+    environment:
+      - DOCKER_TLS_CERTDIR=/certs
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - gitlab_runner3_config:/etc/gitlab-runner
+    networks:
+      - gitlab  
+
+volumes:
+  gitlab_config:
+  gitlab_logs:
+  gitlab_data:
+  gitlab_runner1_config:
+  gitlab_runner2_config:
+  gitlab_runner3_config:
